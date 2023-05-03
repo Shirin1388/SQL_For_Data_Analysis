@@ -16,6 +16,7 @@
 
 -- Solution (MS Sql Server):
 
-select
-  AVG(session_end - session_start) over (partition by session_type) as avg_duration
-from twitch_sessions
+SELECT distinct 
+   session_type
+  ,AVG(DATEDIFF(second, session_start, session_end)) over (partition by session_type) AS duration
+FROM twitch_sessions
