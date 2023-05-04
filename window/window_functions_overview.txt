@@ -1,0 +1,99 @@
+Sql window functions are among the advanced topics in sql. They are very useful specially when we do analytical work. They help us to write more understandable 
+sql queries quicker and more efficient.
+
+But what are window functions? These functions create (as the name suggests) a window over the data, where we can analyse the rows that are
+somehow related to the current row.
+Below is the general syntasx for all window functions:
+
+Function (Expressions)
+Filter (Where Predicatess)
+Over (
+  [partition by Expressions]
+  [order by Expressions [Nulls First|Last]]
+  [Frame Type between Frame Start and Frame End]
+  [Exclude frame exclusion]
+)
+
+Note: partition is similar to group by. when we use Partition By in window functions it means we group the rows in the windows based on a column. 
+
+Below we explain some of the popular window functions in more details. But first lets explain a couple of things:
+- When we create a window over some part of the main dataset, it doesn't impact the entire dataset. The entire data is still accessible 
+  by the query outside of the window function's boundary.
+- If we want the window to be the entire dataset, we can use empty Over()
+
+There are 3 most common categories for window functions: Ranking functions, Aggregate functions, Value functions.
+1- Ranking functions: most popular ones are
+   Row_Number(), Rank(), Dense_Rank(), Percent_Rank(), NTile()
+   Note: the Order By in rank functions is mandatory and it is used for sorting. It is the base for ranking.
+2- Aggregate functions: most populars are
+   AVG(), Max(), Min(), SUM(), Count()
+   Note: The window aggregate functions and normal aggregare functions are not exactly the same.
+   Note 2: the Order By in Aggregate window functions is not for sorting the values. it is used to frame the window for our aggregate function.
+3- Offset functions: most popular ones are
+   Lag(), Lead(), First_Value(), Last_Value(), Nth_Value()
+
+Below is a very general overview of some of the above mentioned functions:
+
+RANKING FUNCTIONS:
+- Row_Number(): This creates unique sequential numbers from 1 to n for each row in the window. If there are
+  partitions then the row number will be reset to 1 for each partition.
+  Row_Number() over([partition by column_x] order by column_y)
+  
+- Rank() and Dense_Rank() functions: as the names suggests these are to rank rows based on a value. They might not be unique if there are duplicate values
+  in the window. The difference between Rank and Dense_Rank is Dense_Rank is sequential but Rank might not be.
+  for example if we are ranking based on column_y with values (a, b, b, c, d), the rank function returns (1, 2, 2, 4, 5) and dense_rank result is (1, 2, 2, 3, 4).
+  the syntax for both of them is as below:
+  
+  Rank() over([partition by column_x] order by column_y [asc/desc])
+  
+- Percent_Rank() function: it is a kind of Distribution Function. It computes the relative rank of a row within a window partition. The value is 
+  a numeric ratio between 0.0 and 1.0 .
+  Percent_Rank() over([partition by column_x] order by column_y)
+  
+AGGREGATE WINDOW FUNCTIONS:
+- AVG(), SUM(), Count(), MIN() and MAX() functions: These are window aggregare functions. We can use Partition by and Order by with frame inside the window.
+  As mentioned before, the Order By in here is not for sorting the data. It is used for Framing.
+  The general syntax for aggregate functions is:
+  
+  Aggregate Function(Expression) Over([Partition By column_x] [order by column_y [Framing Expression]])
+  
+  Framing Expressions are coming after Order By and are normally used in window aggregate or offset functions. the general syntax for framing is as below:
+  Order By column_x Desc
+  Rows|Range|Groups
+  Between 
+    Unbounded Preceding|N Preceding|N Following|Current Row
+  AND
+    Unbounded Following|N Preceding|N Following|Current Row
+  
+  Range is normally used for time intervals. for example: 
+  Order By created_date asc Range Between '14 day' Preceding And Current Row
+  
+  Note about Group Aggregate and Window Aggregate: We can use a group aggregate function inside a window aggregate function. 
+  Suppose we have a query with group by clause. And now we need to   have a window function as well.
+  Select name, count(*) as count, count(Name) over() as window From myTable Group By name;
+  
+  The above query fails becasue we are trying to use the window function Count(Name) in a grouped query. As we know, in a select clause of a grouped query 
+  we can only have the grouped columns and group aggregate functions. Count(Name) is not part of the grouped columns and is not a group aggregate function.
+  To solve the problem we can wrap the window aggregate function around the group aggregate function. as below:
+  Select name, count(*) as count,
+  Sum(count(Name)) over() as window From myTable Group By name;
+  
+  Sum is window aggregate and count(Name) is group aggregate. 
+
+OFFSET FUNCTIONS:
+- Lead() and Lag() functions: they are type of Row Offset functions and they find the position of rows based on the current row.
+  In Row Offset functions the concept of Framing is irrelevant. the general syntax is a below:
+  Lead|Lag() (Expression [,offset, default]) [Ignore|Respect Nulls] over([Partition By Column_x] order by column_y)
+  
+- First_Value(), Last_Value(), Nth_Value() functions: These are Frame Offset functions and find the position of the first or last or nth value based on
+  the window frame.
+  The general syntax is as below:
+  Frame Offset Function (Expression, Offset*)
+  [From {First|Last}]*
+  [{Ignore|Respect} Nulls]
+  Over ([Partition By column_x] order by column_y Frame Specification)
+  
+  * means those sections are for Nth_Value() function only
+  
+
+The above is a very brief overview of some of the most populat window functions. 
